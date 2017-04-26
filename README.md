@@ -52,7 +52,7 @@ explicit:
 => 1
 ```
 Typeops does the following for `+` `-` `*` and `/` :
-* Integer arithmetic gives a truncated integer result
+* Integer arithmetic gives a (truncated) integer result
 * Intermediate results do not lose accuracy
 * decimals cannot combine with floating point
 
