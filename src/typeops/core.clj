@@ -12,66 +12,69 @@
 
 (def ^:private float-ex "Can't combine arbitrary precision with floating point")
 
-(def ^:dynamic *rounding* BigDecimal/ROUND_HALF_UP)
+(def ^:dynamic *rounding*
+  "The rounding mode applied when decimal accuracy is lost. Defaults
+  to BigDecimal/ROUND_HALF_UP"
+  BigDecimal/ROUND_HALF_UP)
 
 (defn- illegal-operand-types
   [^String msg]
   (throw (IllegalArgumentException. msg)))
 
 (defn- unknown-type
-  [^String msg obj]
+  [obj]
   (throw (IllegalArgumentException. (str "Unknown type for operation: " (type obj)))))
 
-(defprotocol ITypedOp
+(defprotocol ^:no-doc ITypedOp
   (op-assign [to from])
   (op-divide [dividend divisor])
   (op-multiply [multiplier multiplicand])
   (op-add [addend augend])
   (op-subtract [minuend subtrahend]))
 
-(defprotocol IToBigDecimal
+(defprotocol ^:no-doc IToBigDecimal
   (assign-dec [from to])
   (divide-dec [divisor dividend])
   (multiply-dec [multiplicand multiplier])
   (add-dec [augend addend])
   (subtract-dec [subtrahend minuend]))
 
-(defprotocol IToDouble
+(defprotocol ^:no-doc IToDouble
   (assign-double [from to])
   (divide-double [divisor dividend])
   (multiply-double [multiplicand multiplier])
   (add-double [augend addend])
   (subtract-double [subtrahend minuend]))
 
-(defprotocol IToFloat
+(defprotocol ^:no-doc IToFloat
   (assign-float [from to])
   (divide-float [divisor dividend])
   (multiply-float [multiplicand multiplier])
   (add-float [augend addend])
   (subtract-float [subtrahend minuend]))
 
-(defprotocol IToLong
+(defprotocol ^:no-doc IToLong
   (assign-long [from to])
   (divide-long [divisor dividend])
   (multiply-long [multiplicand multiplier])
   (add-long [augend addend])
   (subtract-long [subtrahend minuend]))
 
-(defprotocol IToInteger
+(defprotocol ^:no-doc IToInteger
   (assign-int [from to])
   (divide-int [divisor dividend])
   (multiply-int [multiplicand multiplier])
   (add-int [augend addend])
   (subtract-int [subtrahend minuend]))
 
-(defprotocol IToShort
+(defprotocol ^:no-doc IToShort
   (assign-short [from to])
   (divide-short [divisor dividend])
   (multiply-short [multiplicand multiplier])
   (add-short [augend addend])
   (subtract-short [subtrahend minuend]))
 
-(defprotocol IToByte
+(defprotocol ^:no-doc IToByte
   (assign-byte [from to])
   (divide-byte [divisor dividend])
   (multiply-byte [multiplicand multiplier])
@@ -163,17 +166,23 @@
   (op-subtract [minuend subtrahend]
     (subtract-byte subtrahend minuend))
 
-  Object; TODO suspect. Not commutative with resolved first argument
+  ; If there is no explicit despatch (the current value is a date, say)
+  ; then allow nil or anything type compatible
+  Object
   (op-assign [to from]
-    from)
+    (if (nil? from)
+      from
+      (if (instance? (class to) from)
+        from
+        (illegal-operand-types (str (class from) " is not type compatible with " (class to))))))
   (op-divide [dividend divisor]
-    (core-divide dividend divisor))
+    (unknown-type dividend))
   (op-multiply [multiplier multiplicand]
-    (core-multiply multiplier multiplicand))
+    (unknown-type multiplier))
   (op-add [addend augend]
-    (core-add addend augend))
+    (unknown-type addend))
   (op-subtract [minuend subtrahend]
-    (core-subtract minuend subtrahend))
+    (unknown-type minuend))
 
   ;Assigning away from nil to something else is OK. Everything
   ;else is NPE
@@ -291,11 +300,8 @@
   (subtract-dec [^Byte subtrahend ^BigDecimal minuend]
     (.subtract minuend (BigDecimal. (.intValue subtrahend))))
 
-  ; It is meaningful to assign from nil, in the way of that
+  ; It is meaningful to assign to nil, in the way of that
   ; being NULL for a DB column for example.
-  ; When that key is next assigned.
-  ; Assigning away from something to nil to something else is OK. Everything
-  ; else is NPE
   nil
   (assign-dec [from to]
     from)
@@ -306,24 +312,7 @@
   (add-dec [augend addend]
     (throw (NullPointerException.)))
   (subtract-dec [subtrahend minuend]
-    (throw (NullPointerException.)))
-
-
-  Object; TODO suspect. Not commutative with unknown first argument
-  (assign-dec [from ^BigDecimal to]
-    (.setScale (BigDecimal. (str from))
-               (.scale to)
-               *rounding*))
-  (divide-dec [divisor ^BigDecimal dividend]
-    (.divide dividend
-             (BigDecimal. (str divisor))
-             *rounding*))
-  (multiply-dec [multiplicand ^BigDecimal multiplier]
-    (.multiply multiplier (BigDecimal. (str multiplicand))))
-  (add-dec [augend ^BigDecimal addend]
-    (.add addend (BigDecimal. (str augend))))
-  (subtract-dec [subtrahend ^BigDecimal minuend]
-    (.subtract minuend (BigDecimal. (str subtrahend)))))
+    (throw (NullPointerException.))))
 
 (extend-protocol IToDouble
   BigDecimal
@@ -524,7 +513,7 @@
 (extend-protocol IToLong
   BigDecimal
   (assign-long [^BigDecimal from ^Long to]
-    (.longValue from))
+    (long from))
   (divide-long [^BigDecimal divisor ^Long dividend]
     (-> (BigDecimal. (long dividend))
         (.setScale (.scale divisor))
@@ -543,7 +532,7 @@
 
   Double
   (assign-long [^Double from ^Long to]
-    (.longValue from))
+    (long from))
   (divide-long [^Double divisor ^Long dividend]
     (core-divide (double dividend) divisor))
   (multiply-long [^Double multiplicand ^Long multiplier]
@@ -555,7 +544,7 @@
 
   Float
   (assign-long [^Float from ^Long to]
-    (.longValue from))
+    (long from))
   (divide-long [^Float divisor ^Long dividend]
     (core-divide (float dividend) divisor))
   (multiply-long [^Float multiplicand ^Long multiplier]
@@ -629,7 +618,7 @@
 (extend-protocol IToInteger
   BigDecimal
   (assign-int [^BigDecimal from ^Integer to]
-    (.intValue from))
+    (int from))
   (divide-int [^BigDecimal divisor ^Integer dividend]
     (-> (BigDecimal. (int dividend))
         (.setScale (.scale divisor))
@@ -648,7 +637,7 @@
 
   Double
   (assign-int [^Double from ^Integer to]
-    (.intValue from))
+    (int from))
   (divide-int [^Double divisor ^Integer dividend]
     (core-divide (double dividend) divisor))
   (multiply-int [^Double multiplicand ^Integer multiplier]
@@ -660,7 +649,7 @@
 
   Float
   (assign-int [^Float from ^Integer to]
-    (.intValue from))
+    (int from))
   (divide-int [^Float divisor ^Integer dividend]
     (core-divide (float dividend) divisor))
   (multiply-int [^Float multiplicand ^Integer multiplier]
@@ -672,7 +661,7 @@
 
   Long
   (assign-int [^Long from ^Integer to]
-    (.intValue from))
+    (int from))
   (divide-int [^Long divisor ^Integer dividend]
     (int (quot dividend divisor)))
   (multiply-int [^Long multiplicand ^Integer multiplier]
@@ -696,7 +685,7 @@
 
   Short
   (assign-int [^Short from ^Integer to]
-    (.intValue from))
+    (int from))
   (divide-int [^Short divisor ^Integer dividend]
     (int (quot dividend divisor)))
   (multiply-int [^Short multiplicand ^Integer multiplier]
@@ -708,7 +697,7 @@
 
   Byte
   (assign-int [^Byte from ^Integer to]
-    (.intValue from))
+    (int from))
   (divide-int [^Byte divisor ^Integer dividend]
     (int (quot dividend divisor)))
   (multiply-int [^Byte multiplicand ^Integer multiplier]
@@ -733,7 +722,7 @@
 (extend-protocol IToShort
   BigDecimal
   (assign-short [^BigDecimal from ^Short to]
-    (.shortValue from))
+    (short from))
   (divide-short [^BigDecimal divisor ^Short dividend]
     (-> (BigDecimal. (int dividend))
         (.setScale (.scale divisor))
@@ -752,7 +741,7 @@
 
   Double
   (assign-short [^Double from ^Short to]
-    (.shortValue from))
+    (short from))
   (divide-short [^Double divisor ^Short dividend]
     (core-divide (double dividend) divisor))
   (multiply-short [^Double multiplicand ^Short multiplier]
@@ -764,7 +753,7 @@
 
   Float
   (assign-short [^Float from ^Short to]
-    (.shortValue from))
+    (short from))
   (divide-short [^Float divisor ^Short dividend]
     (core-divide (float dividend) divisor))
   (multiply-short [^Float multiplicand ^Short multiplier]
@@ -776,7 +765,7 @@
 
   Long
   (assign-short [^Long from ^Short to]
-    (.shortValue from))
+    (short from))
   (divide-short [^Long divisor ^Short dividend]
     (short (quot dividend divisor)))
   (multiply-short [^Long multiplicand ^Short multiplier]
@@ -788,7 +777,7 @@
 
   Integer
   (assign-short [^Integer from ^Short to]
-    (.shortValue from))
+    (short from))
   (divide-short [^Integer divisor ^Short dividend]
     (short (quot dividend divisor)))
   (multiply-short [^Integer multiplicand ^Short multiplier]
@@ -812,7 +801,7 @@
 
   Byte
   (assign-short [^Byte from ^Short to]
-    (.shortValue from))
+    (short from))
   (divide-short [^Byte divisor ^Short dividend]
     (short (quot dividend divisor)))
   (multiply-short [^Byte multiplicand ^Short multiplier]
@@ -837,7 +826,7 @@
 (extend-protocol IToByte
   BigDecimal
   (assign-byte [^BigDecimal from ^Byte to]
-    (.byteValue from))
+    (byte from))
   (divide-byte [^BigDecimal divisor ^Byte dividend]
     (-> (BigDecimal. (int dividend))
         (.setScale (.scale divisor))
@@ -856,7 +845,7 @@
 
   Double
   (assign-byte [^Double from ^Byte to]
-    (.byteValue from))
+    (byte from))
   (divide-byte [^Double divisor ^Byte dividend]
     (core-divide (double dividend) divisor))
   (multiply-byte [^Double multiplicand ^Byte multiplier]
@@ -868,7 +857,7 @@
 
   Float
   (assign-byte [^Float from ^Byte to]
-    (.byteValue from))
+    (byte from))
   (divide-byte [^Float divisor ^Byte dividend]
     (core-divide (float dividend) divisor))
   (multiply-byte [^Float multiplicand ^Byte multiplier]
@@ -880,7 +869,7 @@
 
   Long
   (assign-byte [^Long from ^Byte to]
-    (.byteValue from))
+    (byte from))
   (divide-byte [^Long divisor ^Byte dividend]
     (byte (quot dividend divisor)))
   (multiply-byte [^Long multiplicand ^Byte multiplier]
@@ -892,7 +881,7 @@
 
   Integer
   (assign-byte [^Integer from ^Byte to]
-    (.byteValue from))
+    (byte from))
   (divide-byte [^Integer divisor ^Byte dividend]
     (byte (quot dividend divisor)))
   (multiply-byte [^Integer multiplicand ^Byte multiplier]
@@ -904,7 +893,7 @@
 
   Short
   (assign-byte [^Short from ^Byte to]
-    (.byteValue from))
+    (byte from))
   (divide-byte [^Short divisor ^Byte dividend]
     (int (quot dividend divisor)))
   (multiply-byte [^Short multiplicand ^Byte multiplier]
@@ -938,7 +927,10 @@
   (subtract-byte [subtrahend minuend]
     (throw (NullPointerException.))))
 
-(def ^:dynamic *warn-on-absent-key* false)
+(def ^:dynamic *warn-on-absent-key*
+  "When 'assigning' to a map key that is absent, print a warning.
+  Defaults to true."
+  true)
 
 (defn- warn-on-absent-key!
   "Look for a value to base an assignment on. If the
@@ -948,18 +940,18 @@
   (if-not (contains? map key)
     (if *warn-on-absent-key*
       (println (str "WARNING: absent key " key))))
-  (or (get map key)
-      (-> map
+  (or (-> map
           meta
           :proto
-          (get key))))
+          (get key))
+      (get map key)))
 
 (defn assign
-  "'assigns' val to the key within map. If there is an existing
-  value it will be used to align the type of val, with rounding
-  or truncation as necessary. If there is no existing value or
-  nil the corresponding key of the prototype in the meta data
-  is used, thus recovering the correct type/precision."
+  "'assigns' val to the key within map. If the meta data
+  is a map containing the key :proto the corresponding value
+  will be used to align the type of val, with rounding or
+  truncation as necessary. If there is no meta data any existing
+  value is used to maintain the correct type/precision."
   ([map key val]
    (let [cur (warn-on-absent-key! map key)]
      (core-assoc map key (op-assign cur val))))
@@ -1021,17 +1013,20 @@
                         reset-to)))))
 
 (defn init-global!
-  "Use typeops arithmetic operations globally"
+  "Alter the root bindings of vars  +, -, * and / to use typeops
+  arithmetic operations globally"
   []
   (do-alter-vars! :set))
 
 (defn reset-global!
-  "Reset to use clojure.core arithmetic operations globally"
+  "Reset the root bindings of vars  +, -, * and / to use
+  clojure.core arithmetic operations globally"
   []
   (do-alter-vars! :reset))
 
 (defmacro init-namespace
-  "Use typeops arithmetic operations in the current namespace"
+  "Map the symbols +, -, * and / to use typeops arithmetic operations
+  in the current namespace"
   []
   `(do
      (ns-unmap *ns* '~(symbol '+))
