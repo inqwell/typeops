@@ -934,8 +934,9 @@
 
 (defn- warn-on-absent-key!
   "Look for a value to base an assignment on. If the
-  slot is empty or contains nil look for a prototype
-  in the meta data"
+  meta data contains a prototype then use that, otherwise
+  use any existing value. Optionally issue a warning
+  if the key is absent."
   [map key]
   (if-not (contains? map key)
     (if *warn-on-absent-key*
