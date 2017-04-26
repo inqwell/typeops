@@ -61,7 +61,7 @@ If you are modelling domain types it is useful to "assign" fields according to
 their underlying type and accuracy, rather than say relying on your database
 to do this for you:
 ```clojure
-(def m)
+(def m
 {:Integer  0,
  :Decimal2 0.00M,
  :Short    0,
@@ -70,18 +70,18 @@ to do this for you:
  :Long     1,
  :Byte     0,
  :Double   0.0,
- :String   ""}
+ :String   ""})
 
 (assign m :Decimal2 2.7182818M)
-{:Integer 0,
- :Decimal2 2.72M,
- :Short 0,
- :Decimal 0E-15M,
- :Float 0.0,
- :Long 1,
- :Byte 0,
- :Double 0.0,
- :String ""}
+=> {:Integer 0,
+    :Decimal2 2.72M,
+    :Short 0,
+    :Decimal 0E-15M,
+    :Float 0.0,
+    :Long 1,
+    :Byte 0,
+    :Double 0.0,
+    :String ""}
 ```
 ### nil
 If your domain model permits `NULL` values you can represent these as `nil` in
