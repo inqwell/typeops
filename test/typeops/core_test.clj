@@ -448,3 +448,11 @@
     (is (= (multiply (byte 3) (byte 3) (byte 2)) 18))
     (is (= (divide (byte 123) (byte 6) (byte 3)) 6))))
 
+(deftest unary-or-none
+  (testing "add none"
+    (is (= (add) 0))
+    (is (= (add 2) 2))
+    (is (= (subtract 2) -2))
+    (is (= (multiply) 1))
+    (is (= (multiply 2) 2))
+    (is (= (divide 0.5) 2.0))))
