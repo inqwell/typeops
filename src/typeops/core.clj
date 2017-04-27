@@ -1,11 +1,12 @@
 (ns typeops.core
+  (:refer-clojure :exclude [+ - * /])
   (:import (java.math BigDecimal)))
 
-(def ^:no-doc core-assoc assoc)
-(def ^:no-doc core-divide /)
-(def ^:no-doc core-multiply *)
-(def ^:no-doc core-add +)
-(def ^:no-doc core-subtract -)
+;(def ^:no-doc core-assoc assoc)
+(def ^:no-doc core-divide clojure.core//)
+(def ^:no-doc core-multiply clojure.core/*)
+(def ^:no-doc core-add clojure.core/+)
+(def ^:no-doc core-subtract clojure.core/-)
 
 ; TODO integration options
 ; TODO use math context to limit scale of multiplications?
@@ -955,7 +956,7 @@
   value is used to maintain the correct type/precision."
   ([map key val]
    (let [cur (warn-on-absent-key! map key)]
-     (core-assoc map key (op-assign cur val))))
+     (assoc map key (op-assign cur val))))
   ([map key val & kvs]
    (let [ret (assign map key val)]
      (if kvs
@@ -965,43 +966,43 @@
                   "assoc expects even number of arguments after map/vector, found odd number")))
        ret))))
 
-(defn add
+(defn +
   "Returns the sum of nums. (add) returns 0."
   ([] 0)
   ([x] x)
   ([x y] (op-add x y))
   ([x y & more]
-   (reduce add (add x y) more)))
+   (reduce + (+ x y) more)))
 
-(defn subtract
+(defn -
   "If no ys are supplied, returns the negation of x, else subtracts
   the ys from x and returns the result."
   ([x] (core-subtract x))
   ([x y] (op-subtract x y))
   ([x y & more]
-   (reduce subtract (subtract x y) more)))
+   (reduce - (- x y) more)))
 
-(defn multiply
+(defn *
   "Returns the product of nums. (multiply) returns 1."
   ([] 1)
   ([x] x)
   ([x y] (op-multiply x y))
   ([x y & more]
-   (reduce multiply (multiply x y) more)))
+   (reduce * (* x y) more)))
 
-(defn divide
+(defn /
   "If no denominators are supplied, returns 1/numerator,
   else returns numerator divided by all of the denominators."
-  ([x] (divide 1 x))
+  ([x] (/ 1 x))
   ([x y] (op-divide x y))
   ([x y & more]
-   (reduce divide (divide x y) more)))
+   (reduce / (/ x y) more)))
 
 (def ^:private alter-vars
-  [#'+     add      core-add
-   #'-     subtract core-subtract
-   #'*     multiply core-multiply
-   #'/     divide   core-divide])
+  [#'clojure.core/+     +      core-add
+   #'clojure.core/-     -      core-subtract
+   #'clojure.core/*     *      core-multiply
+   #'clojure.core//     /      core-divide])
 
 (defn- do-alter-vars!
   [action]
@@ -1024,24 +1025,3 @@
   clojure.core arithmetic operations globally"
   []
   (do-alter-vars! :reset))
-
-(defmacro init-namespace
-  "Map the symbols +, -, * and / to use typeops arithmetic operations
-  in the current namespace"
-  []
-  `(do
-     (ns-unmap *ns* '~(symbol '+))
-     (def ~(symbol '+) add)
-
-     (ns-unmap *ns* '~(symbol '-))
-     (def ~(symbol '-) subtract)
-
-     (ns-unmap *ns* '~(symbol '*))
-     (def ~(symbol '*) multiply)
-
-     (ns-unmap *ns* '~(symbol '/))
-     (def ~(symbol '/) divide)
-
-     nil))
-
-

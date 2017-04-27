@@ -1,4 +1,5 @@
 (ns typeops.assign-test
+  (:refer-clojure :exclude [+ - * /])
   (:require [clojure.test :refer :all]
             [typeops.core :refer :all]))
 
@@ -14,18 +15,6 @@
               :Date     (java.util.Date.)})
 
 (def m (with-meta m-types {:proto m-types}))
-
-(defn- same-precision-0
-  [key m1 m2]
-  (let [i1 (key m1)
-        i2 (key m2)
-        c1 (class i1)
-        c2 (class i2)]
-    (if-not (= c1 c2)
-      false    ; (throw (IllegalArgumentException. (str c1 " not same precision as " c2))))
-      (if (decimal? i1)
-        (= (.scale i1) (.scale i2))
-        true))))
 
 (defn- same-precision
   [k m v e]

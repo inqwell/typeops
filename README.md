@@ -100,43 +100,30 @@ exception
 
 ## Usage
 
-### Explicit
+### Per Namespace
 ```clojure
-(ns myapp.calcs
-  (:require [typeops.core :as t]))
+(ns myns
+  (:refer-clojure :exclude [+ - * /])
+  (:require [typeops.core :refer :all]))
 
-(t/add 3.142M 2.7182818M)
+(+ 3.142M 2.7182818M)
 => 5.8602818M
 
-(t/subtract 3.142M 2.7182818M 3.142M)
+(- 3.142M 2.7182818M 3.142M)
 => -2.7182818M
 
-(t/multiply 3.142M 2.7182818M 3.142M)
+(* 3.142M 2.7182818M 3.142M)
 => 26.8353237278152M
 
-(t/divide 3.142M 2.7182818M 0.1234M)
+(/ 3.142M 2.7182818M 0.1234M)
 => 9.368M
 
-(t/assign my-map k v ... ks vs)
-```
-
-### Per Namespace
-Use the macro `(init-namespace)` to redefine `+` `-` `*` and `/` in the current
-namespace:
-```clojure
-/
-=> #object[clojure.core$_SLASH_ 0x11a92813 "clojure.core$_SLASH_@11a92813"]
-
-(init-namespace)
-=> nil
-/
-=> #object[typeops.core$divide 0x604d39e7 "typeops.core$divide@604d39e7"]
+(assign my-map k v ... ks vs)
 ```
 
 ### Globally
-Call the function `init-global!` to alter the vars `+` `-` `*` and `/`
-in `clojure.core`.
-
+Call the function `init-global!` somewhere in your system start up to
+alter the vars `+` `-` `*` and `/` in `clojure.core`.
 
 ## License
 
