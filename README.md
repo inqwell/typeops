@@ -2,6 +2,8 @@
 
 Alternative type outcomes for arithmetic in Clojure.
 
+[![Clojars Project](http://clojars.org/typeops/latest-version.svg)](http://clojars.org/typeops)
+
 * In Clojure, functions are agnostic about argument types, yet the host platform is not and likely
 neither is your database.
 
