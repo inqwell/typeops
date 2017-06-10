@@ -1,7 +1,7 @@
 (ns typeops.assign-test
-  (:refer-clojure :exclude [+ - * /])
+  (:refer-clojure :exclude [merge assoc])
   (:require [clojure.test :refer :all]
-            [typeops.core :refer :all]))
+            [typeops.assign :refer :all]))
 
 (def m-types {:String   ""
               :Long     1
@@ -15,6 +15,8 @@
               :Date     (java.util.Date.)})
 
 (def m (with-meta m-types {:proto m-types}))
+
+(def incompatible-type #"Incompatible type for operation")
 
 (defn- same-precision
   [k m v e]
@@ -122,6 +124,25 @@
     (is (assign-nil-and-back :Decimal m 1.00M 1.00M))
     (is (assign-nil-and-back :Decimal2 m 1.234M 1.23M))
     (is (assign-nil-and-back :Decimal2 m 1.235M 1.24M))))
+
+(deftest incompatible-types
+  (testing "incompatible-types"
+    (is (thrown-with-msg? IllegalArgumentException incompatible-type
+                          (assign m :Long m "1")))
+    (is (thrown-with-msg? IllegalArgumentException incompatible-type
+                          (assign m :Integer m "1")))
+    (is (thrown-with-msg? IllegalArgumentException incompatible-type
+                          (assign m :Decimal m "1")))
+    (is (thrown-with-msg? IllegalArgumentException incompatible-type
+                          (assign m :Short m "1")))
+    (is (thrown-with-msg? IllegalArgumentException incompatible-type
+                          (assign m :Long m "1")))
+    (is (thrown-with-msg? IllegalArgumentException incompatible-type
+                          (assign m :Float m "1")))
+    (is (thrown-with-msg? IllegalArgumentException incompatible-type
+                          (assign m :Byte m "1")))))
+
+
 
 (deftest non-numerics
   (testing "not-compatible"

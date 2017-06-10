@@ -1,4 +1,4 @@
-(defproject typeops "0.1.0"
+(defproject typeops "0.1.1"
   :description "Alternative type outcomes for arithmetic"
   :url "https://github.com/inqwell/typeops"
   :license {:name "Eclipse Public License"

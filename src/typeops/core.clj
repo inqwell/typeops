@@ -2,13 +2,11 @@
   (:refer-clojure :exclude [+ - * /])
   (:import (java.math BigDecimal)))
 
-;(def ^:no-doc core-assoc assoc)
 (def ^:no-doc core-divide clojure.core//)
 (def ^:no-doc core-multiply clojure.core/*)
 (def ^:no-doc core-add clojure.core/+)
 (def ^:no-doc core-subtract clojure.core/-)
 
-; TODO integration options
 ; TODO use math context to limit scale of multiplications?
 
 (def ^:private float-ex "Can't combine arbitrary precision with floating point")
@@ -25,6 +23,10 @@
 (defn- unknown-type
   [obj]
   (throw (IllegalArgumentException. (str "Unknown type for operation: " (type obj)))))
+
+(defn- incompatible-type
+  [obj]
+  (throw (IllegalArgumentException. (str "Incompatible type for operation: " (type obj)))))
 
 (defprotocol ^:no-doc ITypedOp
   (op-assign [to from])
@@ -301,6 +303,18 @@
   (subtract-dec [^Byte subtrahend ^BigDecimal minuend]
     (.subtract minuend (BigDecimal. (.intValue subtrahend))))
 
+  Object
+  (assign-dec [from to]
+    (incompatible-type from))
+  (divide-dec [divisor dividend]
+    (incompatible-type dividend))
+  (multiply-dec [ multiplicand multiplier]
+    (incompatible-type multiplier))
+  (add-dec [augend addend]
+    (incompatible-type addend))
+  (subtract-dec [subtrahend minuend]
+    (incompatible-type minuend))
+
   ; It is meaningful to assign to nil, in the way of that
   ; being NULL for a DB column for example.
   nil
@@ -400,6 +414,18 @@
   (subtract-double [^Byte subtrahend ^Double minuend]
     (core-subtract minuend (double subtrahend)))
 
+  Object
+  (assign-double [from to]
+    (incompatible-type from))
+  (divide-double [divisor dividend]
+    (incompatible-type dividend))
+  (multiply-double [ multiplicand multiplier]
+    (incompatible-type multiplier))
+  (add-double [augend addend]
+    (incompatible-type addend))
+  (subtract-double [subtrahend minuend]
+    (incompatible-type minuend))
+
   nil
   (assign-double [from to]
     from)
@@ -497,6 +523,18 @@
     (core-add addend (double augend)))
   (subtract-float [^Byte subtrahend ^Float minuend]
     (core-subtract minuend (double subtrahend)))
+
+  Object
+  (assign-float [from to]
+    (incompatible-type from))
+  (divide-float [divisor dividend]
+    (incompatible-type dividend))
+  (multiply-float [ multiplicand multiplier]
+    (incompatible-type multiplier))
+  (add-float [augend addend]
+    (incompatible-type addend))
+  (subtract-float [subtrahend minuend]
+    (incompatible-type minuend))
 
   nil
   (assign-float [from to]
@@ -603,6 +641,18 @@
   (subtract-long [^Byte subtrahend ^Long minuend]
     (core-subtract minuend subtrahend))
 
+  Object
+  (assign-long [from to]
+    (incompatible-type from))
+  (divide-long [divisor dividend]
+    (incompatible-type divisor))
+  (multiply-long [multiplicand multiplier]
+    (incompatible-type multiplicand))
+  (add-long [augend addend]
+    (incompatible-type augend))
+  (subtract-long [subtrahend minuend]
+    (incompatible-type subtrahend))
+
   nil
   (assign-long [from to]
     from)
@@ -708,6 +758,18 @@
   (subtract-int [^Byte subtrahend ^Integer minuend]
     (core-subtract minuend subtrahend))
 
+  Object
+  (assign-int [from to]
+    (incompatible-type from))
+  (divide-int [divisor dividend]
+    (incompatible-type dividend))
+  (multiply-int [ multiplicand multiplier]
+    (incompatible-type multiplier))
+  (add-int [augend addend]
+    (incompatible-type addend))
+  (subtract-int [subtrahend minuend]
+    (incompatible-type minuend))
+
   nil
   (assign-int [from to]
     from)
@@ -811,6 +873,18 @@
     (core-add addend augend))
   (subtract-short [^Byte subtrahend ^Short minuend]
     (core-subtract minuend subtrahend))
+
+  Object
+  (assign-short [from to]
+    (incompatible-type from))
+  (divide-short [divisor dividend]
+    (incompatible-type dividend))
+  (multiply-short [ multiplicand multiplier]
+    (incompatible-type multiplier))
+  (add-short [augend addend]
+    (incompatible-type addend))
+  (subtract-short [subtrahend minuend]
+    (incompatible-type minuend))
 
   nil
   (assign-short [from to]
@@ -916,6 +990,18 @@
   (subtract-byte [^Byte subtrahend ^Byte minuend]
     (core-subtract minuend subtrahend))
 
+  Object
+  (assign-byte [from to]
+    (incompatible-type from))
+  (divide-byte [divisor dividend]
+    (incompatible-type dividend))
+  (multiply-byte [ multiplicand multiplier]
+    (incompatible-type multiplier))
+  (add-byte [augend addend]
+    (incompatible-type addend))
+  (subtract-byte [subtrahend minuend]
+    (incompatible-type minuend))
+
   nil
   (assign-byte [from to]
     from)
@@ -927,44 +1013,6 @@
     (throw (NullPointerException.)))
   (subtract-byte [subtrahend minuend]
     (throw (NullPointerException.))))
-
-(def ^:dynamic *warn-on-absent-key*
-  "When 'assigning' to a map key that is absent, print a warning.
-  Defaults to true."
-  true)
-
-(defn- warn-on-absent-key!
-  "Look for a value to base an assignment on. If the
-  meta data contains a prototype then use that, otherwise
-  use any existing value. Optionally issue a warning
-  if the key is absent."
-  [map key]
-  (if-not (contains? map key)
-    (if *warn-on-absent-key*
-      (println (str "WARNING: absent key " key))))
-  (or (-> map
-          meta
-          :proto
-          (get key))
-      (get map key)))
-
-(defn assign
-  "'assigns' val to the key within map. If the meta data
-  is a map containing the key :proto the corresponding value
-  will be used to align the type of val, with rounding or
-  truncation as necessary. If there is no meta data any existing
-  value is used to maintain the correct type/precision."
-  ([map key val]
-   (let [cur (warn-on-absent-key! map key)]
-     (assoc map key (op-assign cur val))))
-  ([map key val & kvs]
-   (let [ret (assign map key val)]
-     (if kvs
-       (if (next kvs)
-         (recur ret (first kvs) (second kvs) (nnext kvs))
-         (throw (IllegalArgumentException.
-                  "assoc expects even number of arguments after map/vector, found odd number")))
-       ret))))
 
 (defn +
   "Returns the sum of nums. (add) returns 0."

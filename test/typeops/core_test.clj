@@ -3,6 +3,8 @@
   (:require [clojure.test :refer :all]
             [typeops.core :refer :all]))
 
+(def incompatible-type #"Incompatible type for operation")
+
 (deftest operand-1-bigdecimal
   (testing "bigdecimal"
     (is (= (+ 3.142M 2.7182818M) 5.8602818M))
@@ -49,7 +51,14 @@
     (is (= (+ 3.142M (byte 10)) 13.142M))
     (is (= (- 3.142M (byte 3) (byte 2)) -1.858M))
     (is (= (* 3.142M (byte 3) (byte 2)) 18.852M))
-    (is (= (/ 2.99792458E+08M (byte 6) (byte 12)) 4163784M))))
+    (is (= (/ 2.99792458E+08M (byte 6) (byte 12)) 4163784M)))
+
+
+  (testing "not-compatible"
+    (is (thrown-with-msg? IllegalArgumentException incompatible-type (+ 3.142M "1")))
+    (is (thrown-with-msg? IllegalArgumentException incompatible-type (- 3.142M "1")))
+    (is (thrown-with-msg? IllegalArgumentException incompatible-type (* 3.142M "1")))
+    (is (thrown-with-msg? IllegalArgumentException incompatible-type (/ 2.99792458E+08M "1")))))
 
 
 
@@ -107,7 +116,14 @@
     (is (= (+ 3.142 (byte 10)) 13.142))
     (is (= (- 3.142 (byte 3) (byte 2)) -1.858))
     (is (= (* 3.142 (byte 3) (byte 2)) 18.852))
-    (is (= (/ 2.99792458E+08 (byte 6) (byte 12)) 4163784.1388888885))))
+    (is (= (/ 2.99792458E+08 (byte 6) (byte 12)) 4163784.1388888885)))
+
+  (testing "not-compatible"
+    (is (thrown-with-msg? IllegalArgumentException incompatible-type (+ 3.142 "1")))
+    (is (thrown-with-msg? IllegalArgumentException incompatible-type (- 3.142 "1")))
+    (is (thrown-with-msg? IllegalArgumentException incompatible-type (* 3.142 "1")))
+    (is (thrown-with-msg? IllegalArgumentException incompatible-type (/ 2.99792458E+08 "1")))))
+
 
 
 
@@ -178,7 +194,15 @@
     (is (= (type (- (float 3.142) (byte 3) (byte 2))) (type (double -1.858))))
     ; (is (= (* (float 3.142) (byte 3) (byte 2)) 18.852))
     (is (= (type (* (float 3.142) (byte 3) (byte 2))) (type (double 18.852))))
-    (is (= (/ (float 2.99792458E+08) (byte 6) (byte 12)) 4163784.0))))
+    (is (= (/ (float 2.99792458E+08) (byte 6) (byte 12)) 4163784.0)))
+
+
+  (testing "not-compatible"
+    (is (thrown-with-msg? IllegalArgumentException incompatible-type (+ (float 3.142) "1")))
+    (is (thrown-with-msg? IllegalArgumentException incompatible-type (- (float 3.142) "1")))
+    (is (thrown-with-msg? IllegalArgumentException incompatible-type (* (float 3.142) "1")))
+    (is (thrown-with-msg? IllegalArgumentException incompatible-type (/ (float 2.99792458E+08) "1")))))
+
 
 (deftest operand-1-long
   (testing "bigdecimal"
@@ -234,7 +258,15 @@
     (is (= (+ 3 (byte 10)) 13))
     (is (= (- 3 (byte 3) (byte 2)) -2))
     (is (= (* 3 (byte 3) (byte 2)) 18))
-    (is (= (/ 299792458 (byte 6) (byte 12)) 4163784))))
+    (is (= (/ 299792458 (byte 6) (byte 12)) 4163784)))
+
+
+  (testing "not-compatible"
+    (is (thrown-with-msg? IllegalArgumentException incompatible-type (+ 3 "1")))
+    (is (thrown-with-msg? IllegalArgumentException incompatible-type (- 3 "1")))
+    (is (thrown-with-msg? IllegalArgumentException incompatible-type (* 3 "1")))
+    (is (thrown-with-msg? IllegalArgumentException incompatible-type (/ 299792458 "1")))))
+
 
 (deftest operand-1-integer
   (testing "bigdecimal"
@@ -290,7 +322,15 @@
     (is (= (+ (int 3) (byte 10)) 13))
     (is (= (- (int 3) (byte 3) (byte 2)) -2))
     (is (= (* (int 3) (byte 3) (byte 2)) 18))
-    (is (= (/ (int 299792458) (byte 6) (byte 12)) 4163784))))
+    (is (= (/ (int 299792458) (byte 6) (byte 12)) 4163784)))
+
+
+  (testing "not-compatible"
+    (is (thrown-with-msg? IllegalArgumentException incompatible-type (+ (int 3) "1")))
+    (is (thrown-with-msg? IllegalArgumentException incompatible-type (- (int 3) "1")))
+    (is (thrown-with-msg? IllegalArgumentException incompatible-type (* (int 3) "1")))
+    (is (thrown-with-msg? IllegalArgumentException incompatible-type (/ (int 299792458) "1")))))
+
 
 (deftest operand-1-short
   (testing "bigdecimal"
@@ -346,7 +386,14 @@
     (is (= (+ (short 3) (byte 10)) 13))
     (is (= (- (short 3) (byte 3) (byte 2)) -2))
     (is (= (* (short 3) (byte 3) (byte 2)) 18))
-    (is (= (/ (short 12345) (byte 6) (byte 12)) 171))))
+    (is (= (/ (short 12345) (byte 6) (byte 12)) 171)))
+
+  (testing "not-compatible"
+    (is (thrown-with-msg? IllegalArgumentException incompatible-type (+ (short 3) "1")))
+    (is (thrown-with-msg? IllegalArgumentException incompatible-type (- (short 3) "1")))
+    (is (thrown-with-msg? IllegalArgumentException incompatible-type (* (short 3) "1")))
+    (is (thrown-with-msg? IllegalArgumentException incompatible-type (/ (short 12345) "1")))))
+
 
 (deftest operand-1-byte
   (testing "bigdecimal"
@@ -402,7 +449,14 @@
     (is (= (+ (byte 3) (byte 10)) 13))
     (is (= (- (byte 3) (byte 3) (byte 2)) -2))
     (is (= (* (byte 3) (byte 3) (byte 2)) 18))
-    (is (= (/ (byte 123) (byte 6) (byte 3)) 6))))
+    (is (= (/ (byte 123) (byte 6) (byte 3)) 6)))
+
+  (testing "not-compatible"
+    (is (thrown-with-msg? IllegalArgumentException incompatible-type (+ (byte 3) "1")))
+    (is (thrown-with-msg? IllegalArgumentException incompatible-type (- (byte 3) "1")))
+    (is (thrown-with-msg? IllegalArgumentException incompatible-type (* (byte 3) "1")))
+    (is (thrown-with-msg? IllegalArgumentException incompatible-type (/ (byte 123) "1")))))
+
 
 (deftest unary-or-none
   (testing "add none"
