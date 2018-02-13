@@ -3,6 +3,7 @@
 Alternative type outcomes for arithmetic in Clojure.
 
 [![Clojars Project](http://clojars.org/typeops/latest-version.svg)](http://clojars.org/typeops)
+`[typeops "0.1.1"]`
 
 * In Clojure, functions are agnostic about argument types, yet the host platform is not and likely
 neither is your database.
@@ -74,7 +75,7 @@ to do this for you:
  :Double   0.0,
  :String   ""})
 
-(assign m :Decimal2 2.7182818M)
+(assoc m :Decimal2 2.7182818M)
 => {:Integer 0,
     :Decimal2 2.72M,
     :Short 0,
@@ -105,8 +106,9 @@ exception
 ### Per Namespace
 ```clojure
 (ns myns
-  (:refer-clojure :exclude [+ - * /])
-  (:require [typeops.core :refer :all]))
+  (:refer-clojure :exclude [+ - * / assoc])
+  (:require [typeops.core :refer :all])
+  (:require [typeops.assign :refer :all]))
 
 (+ 3.142M 2.7182818M)
 => 5.8602818M
@@ -120,7 +122,9 @@ exception
 (/ 3.142M 2.7182818M 0.1234M)
 => 9.368M
 
-(assign my-map k v ... ks vs)
+(assoc my-map k v ... ks vs)  ; assoc preserves type and precision
+(assign my-map k v ... ks vs) ; same as above
+
 ```
 
 ### Globally
@@ -129,7 +133,7 @@ alter the vars `+` `-` `*` and `/` in `clojure.core`.
 
 ## License
 
-Copyright © 2017 Inqwell Ltd
+Copyright © 2018 Inqwell Ltd
 
 Distributed under the Eclipse Public License either version 1.0 or (at
 your option) any later version.
