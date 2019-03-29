@@ -16,17 +16,23 @@
   to BigDecimal/ROUND_HALF_UP"
   BigDecimal/ROUND_HALF_UP)
 
+(def ^:dynamic *debug*
+  "When set to true (not just truthy) any exception thrown
+  for assoc or merge operations that cause type violations
+  will carry the data {:map map :key key :val val :cur cur}"
+  {})
+
 (defn- illegal-operand-types
   [^String msg]
-  (throw (IllegalArgumentException. msg)))
+  (throw (ex-info msg *debug*)))
 
 (defn- unknown-type
   [obj]
-  (throw (IllegalArgumentException. (str "Unknown type for operation: " (type obj)))))
+  (throw (ex-info (str "Unknown type for operation: " (type obj)) *debug*)))
 
 (defn- incompatible-type
   [obj]
-  (throw (IllegalArgumentException. (str "Incompatible type for operation: " (type obj)))))
+  (throw (ex-info (str "Incompatible type for operation: " (type obj)) *debug*)))
 
 (defprotocol ^:no-doc ITypedOp
   (op-assign [to from])
@@ -1015,7 +1021,7 @@
     (throw (NullPointerException.))))
 
 (defn +
-  "Returns the sum of nums. (add) returns 0."
+  "Returns the sum of nums. (+) returns 0."
   ([] 0)
   ([x] x)
   ([x y] (op-add x y))

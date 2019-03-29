@@ -1,7 +1,8 @@
 (ns typeops.assign-test
   (:refer-clojure :exclude [merge assoc])
   (:require [clojure.test :refer :all]
-            [typeops.assign :refer :all]))
+            [typeops.assign :refer :all])
+  (import clojure.lang.ExceptionInfo))
 
 (def m-types {:String   ""
               :Long     1
@@ -38,8 +39,8 @@
 (deftest assign-keep-type
   (testing "decimal"
     (is (same-precision :Decimal m 1.00M 1.00M))
-    (is (thrown? IllegalArgumentException (same-precision :Decimal m 1.0 1.00M)))
-    (is (thrown? IllegalArgumentException (same-precision :Decimal m (float 1.0) 1.00M)))
+    (is (thrown? ExceptionInfo (same-precision :Decimal m 1.0 1.00M)))
+    (is (thrown? ExceptionInfo (same-precision :Decimal m (float 1.0) 1.00M)))
     (is (same-precision :Decimal m 1 1.00M))
     (is (same-precision :Decimal m (int 1) 1.00M))
     (is (same-precision :Decimal m (short 1) 1.00M))
@@ -48,7 +49,7 @@
     (is (same-precision :Decimal2 m 1.234M 1.23M))
     (is (same-precision :Decimal2 m 1.235M 1.24M)))
   (testing "double"
-    (is (thrown? IllegalArgumentException (same-precision :Double m 12.00M 12.0)))
+    (is (thrown? ExceptionInfo (same-precision :Double m 12.00M 12.0)))
     (is (same-precision :Double m 12.0 12.0))
     (is (same-precision :Double m (float 12.0) 12.0))
     (is (same-precision :Double m 12 12.0))
@@ -56,7 +57,7 @@
     (is (same-precision :Double m (short 12) 12.0))
     (is (same-precision :Double m (byte 12) 12.0)))
   (testing "float"
-    (is (thrown? IllegalArgumentException (same-precision :Float m 12.00M (float 12.0))))
+    (is (thrown? ExceptionInfo (same-precision :Float m 12.00M (float 12.0))))
     (is (same-precision :Float m 12.0 (float 12.0)))
     (is (same-precision :Float m (float 12.0) (float 12.0)))
     (is (same-precision :Float m 12 (float 12.0)))
@@ -127,19 +128,19 @@
 
 (deftest incompatible-types
   (testing "incompatible-types"
-    (is (thrown-with-msg? IllegalArgumentException incompatible-type
+    (is (thrown-with-msg? ExceptionInfo incompatible-type
                           (assign m :Long m "1")))
-    (is (thrown-with-msg? IllegalArgumentException incompatible-type
+    (is (thrown-with-msg? ExceptionInfo incompatible-type
                           (assign m :Integer m "1")))
-    (is (thrown-with-msg? IllegalArgumentException incompatible-type
+    (is (thrown-with-msg? ExceptionInfo incompatible-type
                           (assign m :Decimal m "1")))
-    (is (thrown-with-msg? IllegalArgumentException incompatible-type
+    (is (thrown-with-msg? ExceptionInfo incompatible-type
                           (assign m :Short m "1")))
-    (is (thrown-with-msg? IllegalArgumentException incompatible-type
+    (is (thrown-with-msg? ExceptionInfo incompatible-type
                           (assign m :Long m "1")))
-    (is (thrown-with-msg? IllegalArgumentException incompatible-type
+    (is (thrown-with-msg? ExceptionInfo incompatible-type
                           (assign m :Float m "1")))
-    (is (thrown-with-msg? IllegalArgumentException incompatible-type
+    (is (thrown-with-msg? ExceptionInfo incompatible-type
                           (assign m :Byte m "1")))))
 
 
@@ -147,10 +148,10 @@
 (deftest non-numerics
   (testing "not-compatible"
     (is (thrown-with-msg?
-          IllegalArgumentException #"not type compatible"
+          ExceptionInfo #"not type compatible"
           (assign m :String 3.142)))
     (is (thrown-with-msg?
-          IllegalArgumentException #"not type compatible"
+          ExceptionInfo #"not type compatible"
           (assign m :Date "Hello, world"))))
   (testing "derived"
     (is (= (-> (assign m :Date (java.sql.Date. 0))
@@ -162,3 +163,23 @@
                  (assign :Date d)
                  :Date)
              d)))))
+
+(deftest missing-key
+  (testing "missing key"
+    (let [absent (atom false)
+          f (fn [m k]
+              (reset! absent true))]
+      (binding [typeops.assign/*warn-on-absent-key* f]
+        (assoc m :absent "Absent!")
+        (is (true? @absent))))))
+
+(deftest not-type-compatible
+  (testing "debug not-compatible"
+    (binding [typeops.core/*debug* true]
+      (try
+        (assoc m :Long "string")
+        (catch Exception e
+          (is (= (-> (.data e)
+                  (select-keys [:val :cur]))
+                 {:val "string"
+                  :cur 1})))))))

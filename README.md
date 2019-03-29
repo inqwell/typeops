@@ -2,8 +2,11 @@
 
 Alternative type outcomes for arithmetic in Clojure.
 
+[API](https://inqwell.github.io/typeops/index.html)
+
 [![Clojars Project](http://clojars.org/typeops/latest-version.svg)](http://clojars.org/typeops)
-`[typeops "0.1.1"]`
+
+`[typeops "0.1.2"]`
 
 * In Clojure, functions are agnostic about argument types, yet the host platform is not and likely
 neither is your database.
@@ -45,7 +48,7 @@ with floating point:
 (* 123.457M 3.142)
 => 387.90189399999997
 ```
-If you want to avoid `ratio` preferring integer arithmetic you have to be
+If you want to avoid `ratio` preferring integer arithmetic, again, you have to be
 explicit:
 ```clojure
 (/ 4 3)
@@ -55,8 +58,11 @@ explicit:
 => 1
 ```
 Typeops does the following for `+` `-` `*` and `/` :
+
 * Integer arithmetic gives a (truncated) integer result
+
 * Intermediate results do not lose accuracy
+
 * decimals cannot combine with floating point
 
 ## "assign"
@@ -101,12 +107,64 @@ For non-numeric fields typeops will use any :proto to keep map values as their i
 type. Attempting to "assign" something that is false for `instance?` results in an
 exception
 
+### Error Handling
+Typeops uses dynamic vars to help with error handling and debugging. Bind `*debug*`
+to `true` to carry information about type-incompatible `assoc` operations out via
+the exception.
+```clojure
+(binding [typeops.core/*debug* true]
+     (assoc m :Integer "foo"))
+
+=> ExceptionInfo Incompatible type for operation: class java.lang.String  clojure.core/ex-info (core.clj:4617)
+*e
+
+=> #error{:cause "Incompatible type for operation: class java.lang.String",
+          :data {:map {:Integer 0,
+                       :Decimal2 0.00M,
+                       :Short 0,
+                       :Decimal 0E-15M,
+                       :Float 0.0,
+                       :Date #inst"2019-03-28T17:14:27.816-00:00",
+                       :Long 1,
+                       :Byte 0,
+                       :Double 0.0,
+                       :String ""},
+                 :key :Integer,
+                 :val "foo",
+                 :cur 0},
+          :via [{:type clojure.lang.ExceptionInfo,
+                 :message "Incompatible type for operation: class java.lang.String"
+                   .
+                   .
+```
+
+Bind `*warn-on-absent-key*` to a function of two arguments `(fn [m k] ...)` which will
+be called when `assoc` puts a key into a map that wasn't there before.
+```
+(binding [typeops.assign/*warn-on-absent-key*
+          (fn [m k]
+            (println k "Boo!"))]
+  (assoc m :Absent "foo"))
+:Absent Boo!
+=> {:Absent "foo",
+    :Integer 0,
+    :Decimal2 0.00M,
+    :Short 0,
+    :Decimal 0E-15M,
+    :Float 0.0,
+    :Date #inst"2019-03-28T17:14:27.816-00:00",
+    :Long 1,
+    :Byte 0,
+    :Double 0.0,
+    :String ""}
+```
+
 ## Usage
 
 ### Per Namespace
 ```clojure
 (ns myns
-  (:refer-clojure :exclude [+ - * / assoc])
+  (:refer-clojure :exclude [+ - * / assoc merge])
   (:require [typeops.core :refer :all])
   (:require [typeops.assign :refer :all]))
 
@@ -133,7 +191,7 @@ alter the vars `+` `-` `*` and `/` in `clojure.core`.
 
 ## License
 
-Copyright © 2018 Inqwell Ltd
+Copyright © 2018-2019 Inqwell Ltd
 
 Distributed under the Eclipse Public License either version 1.0 or (at
 your option) any later version.

@@ -5,24 +5,24 @@
 (def ^:no-doc core-assoc clojure.core/assoc)
 
 (def ^:dynamic *warn-on-absent-key*
-  "When 'assigning' to a map key that is absent, print a warning.
-  Defaults to true."
-  true)
+  "May be bound to a function of two arguments. When 'assigning' to
+  a map key that is absent the function is called passing the map
+  and the key being applied."
+  nil)
 
 (defn- warn-on-absent-key!
   "Look for a value to base an assignment on. If the
   meta data contains a prototype then use that, otherwise
-  use any existing value. Optionally issue a warning
+  use any existing value. Optionally call a function
   if the key is absent."
-  [map key]
-  (if-not (contains? map key)
-    (if *warn-on-absent-key*
-      (println (str "WARNING: absent key " key))))
-  (or (-> map
+  [m k]
+  (when (and *warn-on-absent-key* (not (contains? m k)))
+    (*warn-on-absent-key* m k))
+  (or (-> m
           meta
           :proto
-          (get key))
-      (get map key)))
+          (get k))
+      (get m k)))
 
 (defn assign
   "'assigns' val to the key within map. If the meta data
@@ -32,7 +32,10 @@
   value is used to maintain the correct type/precision."
   ([map key val]
    (let [cur (warn-on-absent-key! map key)]
-     (core-assoc map key (t/op-assign cur val))))
+     (if (true? t/*debug*)
+       (binding [t/*debug* {:map map :key key :val val :cur cur}]
+         (core-assoc map key (t/op-assign cur val)))
+       (core-assoc map key (t/op-assign cur val)))))
   ([map key val & kvs]
    (let [ret (assign map key val)]
      (if kvs

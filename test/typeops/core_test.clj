@@ -1,7 +1,8 @@
 (ns typeops.core-test
   (:refer-clojure :exclude [+ - * /])
   (:require [clojure.test :refer :all]
-            [typeops.core :refer :all]))
+            [typeops.core :refer :all])
+  (import clojure.lang.ExceptionInfo))
 
 (def incompatible-type #"Incompatible type for operation")
 
@@ -14,16 +15,16 @@
 
 
   (testing "double"
-    (is (thrown? IllegalArgumentException (+ 3.142M 2.718)))
-    (is (thrown? IllegalArgumentException (- 3.142M 2.718)))
-    (is (thrown? IllegalArgumentException (* 3.142M 2.718)))
-    (is (thrown? IllegalArgumentException (/ 3.142M 2.718))))
+    (is (thrown? ExceptionInfo (+ 3.142M 2.718)))
+    (is (thrown? ExceptionInfo (- 3.142M 2.718)))
+    (is (thrown? ExceptionInfo (* 3.142M 2.718)))
+    (is (thrown? ExceptionInfo (/ 3.142M 2.718))))
 
   (testing "float"
-    (is (thrown? IllegalArgumentException (+ 3.142M (float 2.718))))
-    (is (thrown? IllegalArgumentException (- 3.142M (float 2.718))))
-    (is (thrown? IllegalArgumentException (* 3.142M (float 2.718))))
-    (is (thrown? IllegalArgumentException (/ 3.142M (float 2.718)))))
+    (is (thrown? ExceptionInfo (+ 3.142M (float 2.718))))
+    (is (thrown? ExceptionInfo (- 3.142M (float 2.718))))
+    (is (thrown? ExceptionInfo (* 3.142M (float 2.718))))
+    (is (thrown? ExceptionInfo (/ 3.142M (float 2.718)))))
 
 
   (testing "long"
@@ -55,19 +56,19 @@
 
 
   (testing "not-compatible"
-    (is (thrown-with-msg? IllegalArgumentException incompatible-type (+ 3.142M "1")))
-    (is (thrown-with-msg? IllegalArgumentException incompatible-type (- 3.142M "1")))
-    (is (thrown-with-msg? IllegalArgumentException incompatible-type (* 3.142M "1")))
-    (is (thrown-with-msg? IllegalArgumentException incompatible-type (/ 2.99792458E+08M "1")))))
+    (is (thrown-with-msg? ExceptionInfo incompatible-type (+ 3.142M "1")))
+    (is (thrown-with-msg? ExceptionInfo incompatible-type (- 3.142M "1")))
+    (is (thrown-with-msg? ExceptionInfo incompatible-type (* 3.142M "1")))
+    (is (thrown-with-msg? ExceptionInfo incompatible-type (/ 2.99792458E+08M "1")))))
 
 
 
 (deftest operand-1-double
   (testing "bigdecimal"
-    (is (thrown? IllegalArgumentException (+ 2.718 3.142M)))
-    (is (thrown? IllegalArgumentException (- 2.718 3.142M)))
-    (is (thrown? IllegalArgumentException (* 2.718 3.142M)))
-    (is (thrown? IllegalArgumentException (/ 2.718 3.142M))))
+    (is (thrown? ExceptionInfo (+ 2.718 3.142M)))
+    (is (thrown? ExceptionInfo (- 2.718 3.142M)))
+    (is (thrown? ExceptionInfo (* 2.718 3.142M)))
+    (is (thrown? ExceptionInfo (/ 2.718 3.142M))))
 
   (testing "double"
     (is (= (+ 3.142 2.7182818) 5.8602818)) ;hmmm
@@ -119,20 +120,20 @@
     (is (= (/ 2.99792458E+08 (byte 6) (byte 12)) 4163784.1388888885)))
 
   (testing "not-compatible"
-    (is (thrown-with-msg? IllegalArgumentException incompatible-type (+ 3.142 "1")))
-    (is (thrown-with-msg? IllegalArgumentException incompatible-type (- 3.142 "1")))
-    (is (thrown-with-msg? IllegalArgumentException incompatible-type (* 3.142 "1")))
-    (is (thrown-with-msg? IllegalArgumentException incompatible-type (/ 2.99792458E+08 "1")))))
+    (is (thrown-with-msg? ExceptionInfo incompatible-type (+ 3.142 "1")))
+    (is (thrown-with-msg? ExceptionInfo incompatible-type (- 3.142 "1")))
+    (is (thrown-with-msg? ExceptionInfo incompatible-type (* 3.142 "1")))
+    (is (thrown-with-msg? ExceptionInfo incompatible-type (/ 2.99792458E+08 "1")))))
 
 
 
 
 (deftest operand-1-float
   (testing "bigdecimal"
-    (is (thrown? IllegalArgumentException (+ (float 2.718) 3.142M)))
-    (is (thrown? IllegalArgumentException (- (float 2.718) 3.142M)))
-    (is (thrown? IllegalArgumentException (* (float 2.718) 3.142M)))
-    (is (thrown? IllegalArgumentException (/ (float 2.718) 3.142M))))
+    (is (thrown? ExceptionInfo (+ (float 2.718) 3.142M)))
+    (is (thrown? ExceptionInfo (- (float 2.718) 3.142M)))
+    (is (thrown? ExceptionInfo (* (float 2.718) 3.142M)))
+    (is (thrown? ExceptionInfo (/ (float 2.718) 3.142M))))
 
   (testing "double (produces double)"
     ;(is (= (add (float 3.142) 2.7182818) 5.8602818)) ;hmmm
@@ -198,10 +199,10 @@
 
 
   (testing "not-compatible"
-    (is (thrown-with-msg? IllegalArgumentException incompatible-type (+ (float 3.142) "1")))
-    (is (thrown-with-msg? IllegalArgumentException incompatible-type (- (float 3.142) "1")))
-    (is (thrown-with-msg? IllegalArgumentException incompatible-type (* (float 3.142) "1")))
-    (is (thrown-with-msg? IllegalArgumentException incompatible-type (/ (float 2.99792458E+08) "1")))))
+    (is (thrown-with-msg? ExceptionInfo incompatible-type (+ (float 3.142) "1")))
+    (is (thrown-with-msg? ExceptionInfo incompatible-type (- (float 3.142) "1")))
+    (is (thrown-with-msg? ExceptionInfo incompatible-type (* (float 3.142) "1")))
+    (is (thrown-with-msg? ExceptionInfo incompatible-type (/ (float 2.99792458E+08) "1")))))
 
 
 (deftest operand-1-long
@@ -262,10 +263,10 @@
 
 
   (testing "not-compatible"
-    (is (thrown-with-msg? IllegalArgumentException incompatible-type (+ 3 "1")))
-    (is (thrown-with-msg? IllegalArgumentException incompatible-type (- 3 "1")))
-    (is (thrown-with-msg? IllegalArgumentException incompatible-type (* 3 "1")))
-    (is (thrown-with-msg? IllegalArgumentException incompatible-type (/ 299792458 "1")))))
+    (is (thrown-with-msg? ExceptionInfo incompatible-type (+ 3 "1")))
+    (is (thrown-with-msg? ExceptionInfo incompatible-type (- 3 "1")))
+    (is (thrown-with-msg? ExceptionInfo incompatible-type (* 3 "1")))
+    (is (thrown-with-msg? ExceptionInfo incompatible-type (/ 299792458 "1")))))
 
 
 (deftest operand-1-integer
@@ -326,10 +327,10 @@
 
 
   (testing "not-compatible"
-    (is (thrown-with-msg? IllegalArgumentException incompatible-type (+ (int 3) "1")))
-    (is (thrown-with-msg? IllegalArgumentException incompatible-type (- (int 3) "1")))
-    (is (thrown-with-msg? IllegalArgumentException incompatible-type (* (int 3) "1")))
-    (is (thrown-with-msg? IllegalArgumentException incompatible-type (/ (int 299792458) "1")))))
+    (is (thrown-with-msg? ExceptionInfo incompatible-type (+ (int 3) "1")))
+    (is (thrown-with-msg? ExceptionInfo incompatible-type (- (int 3) "1")))
+    (is (thrown-with-msg? ExceptionInfo incompatible-type (* (int 3) "1")))
+    (is (thrown-with-msg? ExceptionInfo incompatible-type (/ (int 299792458) "1")))))
 
 
 (deftest operand-1-short
@@ -389,10 +390,10 @@
     (is (= (/ (short 12345) (byte 6) (byte 12)) 171)))
 
   (testing "not-compatible"
-    (is (thrown-with-msg? IllegalArgumentException incompatible-type (+ (short 3) "1")))
-    (is (thrown-with-msg? IllegalArgumentException incompatible-type (- (short 3) "1")))
-    (is (thrown-with-msg? IllegalArgumentException incompatible-type (* (short 3) "1")))
-    (is (thrown-with-msg? IllegalArgumentException incompatible-type (/ (short 12345) "1")))))
+    (is (thrown-with-msg? ExceptionInfo incompatible-type (+ (short 3) "1")))
+    (is (thrown-with-msg? ExceptionInfo incompatible-type (- (short 3) "1")))
+    (is (thrown-with-msg? ExceptionInfo incompatible-type (* (short 3) "1")))
+    (is (thrown-with-msg? ExceptionInfo incompatible-type (/ (short 12345) "1")))))
 
 
 (deftest operand-1-byte
@@ -452,10 +453,10 @@
     (is (= (/ (byte 123) (byte 6) (byte 3)) 6)))
 
   (testing "not-compatible"
-    (is (thrown-with-msg? IllegalArgumentException incompatible-type (+ (byte 3) "1")))
-    (is (thrown-with-msg? IllegalArgumentException incompatible-type (- (byte 3) "1")))
-    (is (thrown-with-msg? IllegalArgumentException incompatible-type (* (byte 3) "1")))
-    (is (thrown-with-msg? IllegalArgumentException incompatible-type (/ (byte 123) "1")))))
+    (is (thrown-with-msg? ExceptionInfo incompatible-type (+ (byte 3) "1")))
+    (is (thrown-with-msg? ExceptionInfo incompatible-type (- (byte 3) "1")))
+    (is (thrown-with-msg? ExceptionInfo incompatible-type (* (byte 3) "1")))
+    (is (thrown-with-msg? ExceptionInfo incompatible-type (/ (byte 123) "1")))))
 
 
 (deftest unary-or-none
